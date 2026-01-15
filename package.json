@@ -1,0 +1,42 @@
+{
+  "name": "spinbutton",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "prebuild": "powershell -NoProfile -Command \"if (Get-ChildItem -Path scripts -Filter *.ts -Recurse -ErrorAction SilentlyContinue) { tsc -p tsconfig.scripts.json }\"",
+    "build": "rollup -c",
+    "prerelease": "powershell -NoProfile -Command \"if (Get-ChildItem -Path scripts -Filter *.ts -Recurse -ErrorAction SilentlyContinue) { tsc -p tsconfig.scripts.json }\"",
+    "release": "rollup -c rollup.release.config.mjs",
+    "watch": "rollup -c -w",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@kipk/load-ha-components": "^1.0.3",
+    "@lit-labs/scoped-registry-mixin": "^1.0.4",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "custom-card-helpers": "^1.9.0",
+    "fast-copy": "^4.0.2",
+    "hass": "^1.0.9",
+    "lit": "^3.3.2",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^25.0.6",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "postcss": "^8.5.6",
+    "prettier": "^3.7.4",
+    "rollup": "^4.55.1",
+    "rollup-plugin-delete": "^3.0.2",
+    "rollup-plugin-postcss": "^4.0.2",
+    "typescript": "^5.9.3"
+  }
+}

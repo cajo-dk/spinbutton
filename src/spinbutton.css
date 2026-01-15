@@ -1,0 +1,221 @@
+/* Color stops for spinner */
+:root {
+  --color-stops-multi: #00e5ff, #00ffcc, #00ff99, #33ff66, #66ff33, #99ff00, #ccff00, #ffcc00, #ff9900, #ff6600, #ff3366, #ff0099, #00e5ff;
+  --color-stops-blue: #0066ff, #2385ff, #55a8ff, #8cc8ff, #d6e9ff, #ffffff, #d6e9ff, #8cc8ff, #55a8ff, #2385ff, #0066ff, #003899, #0066ff;
+  --color-stops-red: #ff1414, #ff4242, #ff7070, #ff9e9e, #ffd4d4, #ffffff, #ffd4d4, #ff9e9e, #ff7070, #ff4242, #ff1414, #a80000, #ff1414;
+  --color-stops-green: #00b85c, #29cd7a, #59e39a, #8ff9bd, #d4ffe9, #ffffff, #d4ffe9, #8ff9bd, #59e39a, #29cd7a, #00b85c, #006b38, #00b85c;
+  --color-stops-orange: #ff7a00, #ff9930, #ffb85f, #ffd48f, #ffeac9, #ffffff, #ffeac9, #ffd48f, #ffb85f, #ff9930, #ff7a00, #cc5400, #ff7a00;
+  --color-stops-yellow: #ffd500, #ffe040, #ffeb73, #fff5a6, #fffbd8, #ffffff, #fffbd8, #fff5a6, #ffeb73, #ffe040, #ffd500, #cca800, #ffd500;
+  --color-stops-none: transparent;
+}
+
+/* Animation */
+@keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+/* spinbutton cards remain borderless */
+ha-card.spinbutton {
+  padding: 8px;
+}
+
+/* Internal button layout */
+#content {
+  width: 100%;
+  height: 100%;
+  display: grid;
+}
+
+#icon {
+  grid-area: icon;
+}
+
+#name {
+  grid-area: name;
+}
+
+#state {
+  grid-area: state;
+}
+
+/* Modifiers for icon-to-the-left-name-to-the-right */
+#content.icon_name_h {
+  grid-template-areas: 'icon name';
+  grid-template-columns: min-content auto;
+  grid-template-rows: 100%;
+}
+
+#icon.icon_name_h {
+  grid-area: icon;
+  justify-self: start;
+  align-self: center;
+}
+
+#name.icon_name_h {
+  padding-left: 8px;
+  justify-self: start;
+  align-self: center;
+}
+
+#state.icon_name_h {
+  display: none;
+}
+
+/* Modifiers for icon-over-name */
+#content.icon_name_v {
+  grid-template-areas: 'icon' 'name';
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 100%;
+}
+
+#icon.icon_name_v {
+  grid-area: icon;
+  justify-self: center;
+  align-self: end;
+}
+
+#name.icon_name_v {
+  justify-self: center;
+  align-self: center;
+}
+
+#state.icon_name_v {
+  display: none;
+}
+
+/* Modifiers for icon-left-name-over-state */
+#content.icon_name_state {
+  grid-template-areas: 'icon name' 'icon state';
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: min-content auto;
+}
+
+#icon.icon_name_state {
+  grid-area: icon;
+  justify-self: start;
+  align-self: center;
+}
+
+#name.icon_name_state {
+  justify-self: start;
+  align-self: end;
+  padding-left: 8px
+}
+
+#state.icon_name_state {
+  justify-self: start;
+  align-self: start;
+  padding-left: 8px
+}
+
+/* Modifiers for icon-top-left-name-over-state */
+#content.upper_left {
+  grid-template-areas: 'icon name x' 'icon state x';
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: calc(var(--mdc-icon-size) + 8px) 1fr calc(var(--mdc-icon-size) + 8px);
+}
+
+#icon.upper_left {
+  grid-area: icon;
+  justify-self: center;
+  align-self: start;
+}
+
+#name.upper_left {
+  justify-self: center;
+  align-self: end;
+}
+
+#state.upper_left {
+  justify-self: center;
+  align-self: start;
+}
+
+/* Card settings */
+:host {
+  --card-bg: #1c1f2b;
+  --ring-active: 1;
+  --ring-width: 2px;
+  --radius: 8px;
+  --spin-speed: 0.8s;
+  --stops: var(--color-stops-multi);
+  --card-width: 100px;
+  --card-height: 100px;
+  --face-bg: var(--card-bg, #1c1f2b);
+  --animation-on: spin var(--spin-speed) linear infinite;
+  --animation-off: none;
+  --animation: var(--animation-on);
+  --solid-width: 2px;
+  --solid-color: #008080;
+  --ring-color: var(--ring-color, #ffd500);
+  --icon-size: 32px;
+
+  position: relative;
+  display: block;
+  border-radius: var(--radius);
+  overflow: hidden;
+  isolation: isolate;
+  background: transparent;
+  width: var(--card-width);
+  min-width: var(--card-width);
+  max-width: var(--card-width);
+  height: var(--card-height);
+  min-height: var(--card-height);
+  max-height: var(--card-height);
+}
+
+
+/* Content layer */
+:host > ha-card, ha-card.spinbutton {
+  position: relative;
+  z-index: 0;
+  background: transparent;      /* face drawn by ::after */
+  border-radius: var(--radius);
+  border: calc((1 - var(--ring-active)) * min(var(--ring-width), var(--solid-width))) solid var(--solid-color);
+  width: 100%;
+  height: 100%;
+}
+
+
+/* Spinning disc (bottom) */
+:host::before, ha-card.spinbutton::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  
+  --disc-size: calc( 2 * ( var(--ring-width) + max(var(--card-width), var(--card-height)) ) + 132px );
+  width: var(--disc-size);
+  height: var(--disc-size);
+  transform: translate(-50%, -50%) rotate(0deg);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  background: conic-gradient(var(--stops));
+  animation: var(--animation, none);
+  z-index: -2;
+  opacity: var(--ring-active);
+}
+
+/* Spinner cutout */
+:host::after, ha-card.spinbutton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(var(--ring-active) * var(--ring-width));
+
+  background:
+    /* center face uses the per-card var */
+    linear-gradient(var(--face-bg), var(--face-bg)) padding-box,
+    /* ring window */
+    linear-gradient(transparent, transparent) border-box;
+  background-clip: padding-box, border-box;
+
+  z-index: -1;
+  pointer-events: none;
+  
+}
+
+/* Don't animate on low-power devices */
+@media (prefers-reduced-motion: reduce) {
+  :host::before, ha-card.spinbutton::before { animation: none; }
+}

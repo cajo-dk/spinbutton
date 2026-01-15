@@ -1,0 +1,27 @@
+.card-config {
+  padding: 12px;
+}
+
+ha-form {
+  display: block;
+}
+
+.tab-bar {
+  --header-height: 48px;
+  display: flex;
+  border-bottom: 1px solid var(--divider-color);
+  overflow: hidden;
+}
+
+.tab-bar > ha-tab {
+  max-width: 50%;
+  overflow: hidden;
+}
+
+.tab-content {
+  margin-top: 12px;
+}
+
+.field {
+  margin: 16px 0;
+}
