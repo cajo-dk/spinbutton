@@ -33,6 +33,8 @@ name: Kitchen
 icon: mdi:rotate-right
 icon_size: 32
 icon_color: "#FFFFFF"
+name_color: "currentColor"
+state_color: "currentColor"
 layout: icon_name_h
 radius: 8
 ring_width: 2
@@ -61,6 +63,8 @@ confirm_actions: false
 - `icon`: Override for the icon (defaults to entity icon or `mdi:rotate-right`).
 - `icon_size`: Icon size in pixels. Default: `32`.
 - `icon_color`: Icon color as a CSS color string (hex, rgb/rgba, etc). Default: `#FFFFFF`.
+- `name_color`: Name color as a CSS color string (hex, rgb/rgba, etc). Default: `currentColor`.
+- `state_color`: State color as a CSS color string (hex, rgb/rgba, etc). Default: `currentColor`.
 - `layout`: Layout for icon/name/state. Options: `icon_name_h`, `icon_name_state`, `icon_name_v`, `custom_css`. Default: `icon_name_h`.
 - `radius`: Card corner radius in pixels. Default: `8`.
 - `ring_width`: Ring border width in pixels. Default: `2`.
@@ -82,10 +86,10 @@ confirm_actions: false
 - Layouts: `icon_name_h`, `icon_name_state`, `icon_name_v`, `upper_left`, and `custom_css`.
 - Ring presets: `multi`, `blue`, `red`, `green`, `orange`, `yellow`, `none`.
 - Custom sizes: width/height can be numbers or CSS lengths.
-- Custom colors: `background` and `icon_color` accept CSS strings or `{ r, g, b }` / `[r, g, b]`.
+- Custom colors: `background`, `icon_color`, `name_color`, and `state_color` accept CSS strings or `{ r, g, b }` / `[r, g, b]`.
 - Optional animation and ring visibility toggles.
 - Action confirmation dialog styled to match the card.
 
 ## Templating
 
-Some fields accept template strings in the form `[[[ ... ]]]` and are evaluated with `hass`, `states`, and `entity` in scope. This is supported for `background`, `icon_color`, `stops`, and boolean fields like `animation` and `show_ring`.
+Some fields accept template strings in the form `[[[ ... ]]]` and are evaluated with `hass`, `states`, and `entity` in scope. This is supported for `background`, `icon_color`, `name_color`, `state_color`, `stops`, and boolean fields like `animation` and `show_ring`.

@@ -35,6 +35,8 @@ export const DEFAULT_CONFIG = {
   speed: 2.5,
   background: '#1C1F2B',
   icon_color: '#FFFFFF',
+  name_color: 'currentColor',
+  state_color: 'currentColor',
   animation: true,
   show_ring: true,
   custom_css: '',

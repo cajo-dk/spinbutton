@@ -24,6 +24,8 @@ interface SpinbuttonCardConfig extends LovelaceCardConfig {
   speed?: number;
   background?: string | [number, number, number] | { r: number; g: number; b: number };
   icon_color?: string | [number, number, number] | { r: number; g: number; b: number };
+  name_color?: string | [number, number, number] | { r: number; g: number; b: number };
+  state_color?: string | [number, number, number] | { r: number; g: number; b: number };
   animation?: boolean;
   show_ring?: boolean;
   custom_css?: string;
@@ -54,6 +56,8 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
     const stops = this._normalizeValue(this._config?.stops, STOP_OPTIONS, 'multi');
     const background = this._normalizeColorText(this._config?.background ?? '#1C1F2B');
     const iconColor = this._normalizeColorText(this._config?.icon_color ?? '#FFFFFF');
+    const nameColor = this._normalizeColorText(this._config?.name_color ?? 'currentColor');
+    const stateColor = this._normalizeColorText(this._config?.state_color ?? 'currentColor');
     const data: SpinbuttonCardConfig = {
       ...this._defaultConfig(),
       ...(this._config ?? {}),
@@ -61,6 +65,8 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
       stops,
       background,
       icon_color: iconColor,
+      name_color: nameColor,
+      state_color: stateColor,
       type: 'custom:spinbutton-card',
     };
     const tabs = ['Card', 'Layout', 'Custom CSS'] as const;
@@ -213,6 +219,9 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
             },
           },
           { name: 'background', selector: { text: {} } },
+          { name: 'icon_color', selector: { text: {} } },
+          { name: 'name_color', selector: { text: {} } },
+          { name: 'state_color', selector: { text: {} } },
           {
             name: 'radius',
             selector: {
@@ -338,6 +347,8 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
       speed: 'Speed (s)',
       background: 'Background',
       icon_color: 'Icon Color',
+      name_color: 'Name Color',
+      state_color: 'State Color',
       animation: 'Animation',
       show_ring: 'Show Ring',
       tap_action: 'Tap Action',

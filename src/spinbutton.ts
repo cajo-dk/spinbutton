@@ -34,6 +34,8 @@ interface SpinbuttonCardConfig extends LovelaceCardConfig {
   speed?: number;
   background?: string | [number, number, number] | { r: number; g: number; b: number };
   icon_color?: string | [number, number, number] | { r: number; g: number; b: number };
+  name_color?: string | [number, number, number] | { r: number; g: number; b: number };
+  state_color?: string | [number, number, number] | { r: number; g: number; b: number };
   animation?: boolean;
   show_ring?: boolean;
   tap_action?: ActionConfig;
@@ -101,6 +103,8 @@ export class SpinbuttonCard extends LitElement {
     const icon = this.config?.icon ?? stateObj?.attributes?.icon ?? 'mdi:rotate-right';
     const iconSize = this.config?.icon_size ?? 32;
     const iconColor = this._resolveColor(this.config?.icon_color, 'currentColor');
+    const nameColor = this._resolveColor(this.config?.name_color, 'currentColor');
+    const stateColor = this._resolveColor(this.config?.state_color, 'currentColor');
     const isInteractive =
       hasAction(this.config?.tap_action) ||
       hasAction(this.config?.hold_action) ||
@@ -127,8 +131,8 @@ export class SpinbuttonCard extends LitElement {
             style="--mdc-icon-size: ${iconSize}px; color: ${iconColor};"
             icon="${icon}"
           ></ha-icon>
-          <div id="name" class="${layout} spinbutton">${name}</div>
-          <div id="state" class="${layout} spinbutton">${stateObj?.state}</div>
+          <div id="name" class="${layout} spinbutton" style="color: ${nameColor};">${name}</div>
+          <div id="state" class="${layout} spinbutton" style="color: ${stateColor};">${stateObj?.state}</div>
         </div>
       </ha-card>
     `;
