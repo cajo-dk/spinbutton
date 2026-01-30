@@ -97,7 +97,8 @@ export class SpinbuttonCard extends LitElement {
     
     const entityId = this.config?.entity;
     const stateObj = entityId && this.hass ? this.hass.states[entityId] : undefined;
-    const name = this.config?.name ?? stateObj?.attributes?.friendly_name ?? 'Spinbutton';
+    const fallbackName = stateObj?.attributes?.friendly_name ?? 'Spinbutton';
+    const name = this._resolveText(this.config?.name, fallbackName);
     const custom_css = this.config?.custom_css ?? stateObj?.attributes?.custom_css ?? '';
     const layout = this.config?.layout ?? stateObj?.attributes?.layout ?? 'icon_name_h';
     const icon = this.config?.icon ?? stateObj?.attributes?.icon ?? 'mdi:rotate-right';
@@ -249,6 +250,20 @@ export class SpinbuttonCard extends LitElement {
         return `rgb(${r} ${g} ${b})`;
       }
     }
+    if (typeof value === 'string' && value.trim() !== '') {
+      const templated = this._evaluateTemplate(value);
+      if (templated !== undefined) {
+        const templatedText = typeof templated === 'string' ? templated : String(templated);
+        if (templatedText.trim() !== '') {
+          return templatedText;
+        }
+      }
+      return value;
+    }
+    return fallback;
+  }
+
+  private _resolveText(value: string | undefined, fallback: string): string {
     if (typeof value === 'string' && value.trim() !== '') {
       const templated = this._evaluateTemplate(value);
       if (templated !== undefined) {
