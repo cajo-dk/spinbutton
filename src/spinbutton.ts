@@ -233,7 +233,16 @@ export class SpinbuttonCard extends LitElement {
 
   private _resolveLength(value?: number | string, fallback = '0px'): string {
     if (typeof value === 'number') return `${value}px`;
-    if (typeof value === 'string' && value.trim() !== '') return value.trim();
+    if (typeof value === 'string' && value.trim() !== '') {
+      const templated = this._evaluateTemplate(value);
+      if (templated !== undefined) {
+        if (typeof templated === 'number') return `${templated}px`;
+        if (typeof templated === 'string' && templated.trim() !== '') {
+          return templated.trim();
+        }
+      }
+      return value.trim();
+    }
     return fallback;
   }
 
@@ -267,10 +276,7 @@ export class SpinbuttonCard extends LitElement {
     if (typeof value === 'string' && value.trim() !== '') {
       const templated = this._evaluateTemplate(value);
       if (templated !== undefined) {
-        const templatedText = typeof templated === 'string' ? templated : String(templated);
-        if (templatedText.trim() !== '') {
-          return templatedText;
-        }
+        return typeof templated === 'string' ? templated : String(templated);
       }
       return value;
     }
