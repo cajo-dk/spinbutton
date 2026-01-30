@@ -36,6 +36,14 @@ ha-card.spinbutton {
   grid-area: state;
 }
 
+#badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 12px;
+  line-height: 1;
+}
+
 /* Modifiers for icon-to-the-left-name-to-the-right */
 #content.icon_name_h {
   grid-template-areas: 'icon name';

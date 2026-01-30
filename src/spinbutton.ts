@@ -15,9 +15,10 @@ import type {
   LovelaceCardConfig,
   LovelaceCardEditor,
 } from 'custom-card-helpers';
-import { handleAction, hasAction, hasDoubleClick } from 'custom-card-helpers';
+import { handleAction, handleActionConfig, hasAction, hasDoubleClick } from 'custom-card-helpers';
 import { CARD_NAME, CARD_TYPE, CARD_VERSION } from './const';
 import { openConfirmDialog } from './confirm-dialog';
+import { openKeypadDialog } from './keypad-dialog';
 import cardCss from './spinbutton.css';
 
 interface SpinbuttonCardConfig extends LovelaceCardConfig {
@@ -36,12 +37,15 @@ interface SpinbuttonCardConfig extends LovelaceCardConfig {
   icon_color?: string | [number, number, number] | { r: number; g: number; b: number };
   name_color?: string | [number, number, number] | { r: number; g: number; b: number };
   state_color?: string | [number, number, number] | { r: number; g: number; b: number };
+  badge?: string;
   animation?: boolean;
   show_ring?: boolean;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
   confirm_actions?: boolean;
+  keypad_actions?: boolean;
+  keypad_digits?: number | string;
 }
 
 /* eslint no-console: 0 */
@@ -67,6 +71,7 @@ export class SpinbuttonCard extends LitElement {
   private _holdTimeout?: number;
   private _holding = false;
   private _confirmPromise?: Promise<boolean>;
+  private _keypadPromise?: Promise<string | null>;
 
   @property({ attribute: false })
   public set hass(hass: HomeAssistant) {
@@ -106,6 +111,7 @@ export class SpinbuttonCard extends LitElement {
     const iconColor = this._resolveColor(this.config?.icon_color, 'currentColor');
     const nameColor = this._resolveColor(this.config?.name_color, 'currentColor');
     const stateColor = this._resolveColor(this.config?.state_color, 'currentColor');
+    const badge = this._resolveText(this.config?.badge, '');
     const isInteractive =
       hasAction(this.config?.tap_action) ||
       hasAction(this.config?.hold_action) ||
@@ -134,6 +140,9 @@ export class SpinbuttonCard extends LitElement {
           ></ha-icon>
           <div id="name" class="${layout} spinbutton" style="color: ${nameColor};">${name}</div>
           <div id="state" class="${layout} spinbutton" style="color: ${stateColor};">${stateObj?.state}</div>
+          ${badge
+            ? html`<div id="badge" class="spinbutton" style="color: ${stateColor};">${badge}</div>`
+            : ''}
         </div>
       </ha-card>
     `;
@@ -156,6 +165,9 @@ export class SpinbuttonCard extends LitElement {
     }
 
     if (changedProps.has('hass' as keyof SpinbuttonCard)) {
+      if (this._isTemplate(this.config?.badge)) {
+        return true;
+      }
       const entityId = this.config?.entity;
       if (!entityId) return true;
       const oldHass = changedProps.get('hass' as keyof SpinbuttonCard) as HomeAssistant | undefined;
@@ -329,6 +341,26 @@ export class SpinbuttonCard extends LitElement {
     return this._confirmPromise;
   }
 
+  private _isTemplate(value?: string): boolean {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    return trimmed.startsWith('[[[') && trimmed.endsWith(']]]');
+  }
+
+  private _requestCode(): Promise<string | null> {
+    if (!this._resolveBoolean(this.config?.keypad_actions, false)) {
+      return Promise.resolve(null);
+    }
+    if (this._keypadPromise) {
+      return this._keypadPromise;
+    }
+    const requiredDigits = this._resolveDigits(this.config?.keypad_digits, 8);
+    this._keypadPromise = openKeypadDialog(this, { requiredDigits }).finally(() => {
+      this._keypadPromise = undefined;
+    });
+    return this._keypadPromise;
+  }
+
   private _handlePointerDown(ev: PointerEvent): void {
     if (!this.hass || !this.config) return;
     if (ev.pointerType === 'mouse' && ev.button !== 0) return;
@@ -406,7 +438,151 @@ export class SpinbuttonCard extends LitElement {
       }
       return;
     }
-    handleAction(this, this.hass, this.config, action);
+    const requiresCode = this._resolveBoolean(this.config?.keypad_actions, false);
+    const code = requiresCode ? await this._requestCode() : null;
+    if (requiresCode && code === null) {
+      if (clearHoldingOnCancel) {
+        this._holding = false;
+      }
+      return;
+    }
+    this._handleActionWithCode(action, code);
+  }
+
+  private _handleActionWithCode(
+    action: 'tap' | 'hold' | 'double_tap',
+    code: string | null
+  ): void {
+    if (!this.hass || !this.config) return;
+    const actionConfig = this._getActionConfig(action);
+    if (!actionConfig) {
+      handleAction(this, this.hass, this.config, action);
+      return;
+    }
+    const normalized = this._normalizeActionConfig(actionConfig);
+    const finalConfig = code ? this._injectCode(normalized, code) : normalized;
+    handleActionConfig(this, this.hass, this.config, finalConfig as ActionConfig);
+  }
+
+  private _getActionConfig(
+    action: 'tap' | 'hold' | 'double_tap'
+  ): ActionConfig | undefined {
+    if (action === 'double_tap') return this.config.double_tap_action;
+    if (action === 'hold') return this.config.hold_action;
+    return this.config.tap_action;
+  }
+
+  private _injectCode(
+    actionConfig: ActionConfig,
+    code: string
+  ): ActionConfig & { code?: string; data?: Record<string, unknown>; service_data?: Record<string, unknown> } {
+    const enriched: ActionConfig & {
+      code?: string;
+      data?: Record<string, unknown>;
+      service_data?: Record<string, unknown>;
+    } = {
+      ...actionConfig,
+      code,
+    };
+    if (actionConfig.action === 'call-service') {
+      const raw = actionConfig as ActionConfig & { data?: Record<string, unknown> };
+      const serviceData: Record<string, unknown> = {
+        ...(raw.data ?? {}),
+        ...(actionConfig.service_data ?? {}),
+      };
+      serviceData.code = code;
+      if (actionConfig.service === 'script.turn_on') {
+        const variables = (serviceData.variables ?? {}) as Record<string, unknown>;
+        serviceData.variables = { ...variables, code };
+      }
+      return {
+        ...enriched,
+        service_data: serviceData,
+      };
+    }
+    return {
+      ...enriched,
+      data: {
+        ...((actionConfig as ActionConfig & { data?: Record<string, unknown> }).data ?? {}),
+        code,
+      },
+    };
+  }
+
+  private _normalizeActionConfig(actionConfig: ActionConfig): ActionConfig {
+    const raw = actionConfig as unknown as {
+      action?: string;
+      perform_action?: string;
+      confirmation?: ActionConfig['confirmation'];
+      repeat?: ActionConfig['repeat'];
+      haptic?: ActionConfig['haptic'];
+      data?: Record<string, unknown>;
+      service_data?: Record<string, unknown>;
+      target?: Record<string, unknown>;
+    };
+    const action = raw.action;
+    const known = new Set([
+      'more-info',
+      'navigate',
+      'url',
+      'toggle',
+      'call-service',
+      'fire-dom-event',
+      'none',
+      'toggle-menu',
+    ]);
+    if (action === 'perform-action' && typeof raw.perform_action === 'string') {
+      const base = {
+        confirmation: raw.confirmation,
+        repeat: raw.repeat,
+        haptic: raw.haptic,
+      };
+      const data = { ...(raw.data ?? {}), ...(raw.service_data ?? {}) };
+      return {
+        ...base,
+        action: 'call-service',
+        service: raw.perform_action,
+        service_data: data,
+        target: raw.target,
+      };
+    }
+    if (typeof action === 'string' && !known.has(action) && action.includes('.')) {
+      const base = {
+        confirmation: raw.confirmation,
+        repeat: raw.repeat,
+        haptic: raw.haptic,
+      };
+      const data = { ...(raw.data ?? {}), ...(raw.service_data ?? {}) };
+      return {
+        ...base,
+        action: 'call-service',
+        service: action,
+        service_data: data,
+        target: raw.target,
+      };
+    }
+    return actionConfig;
+  }
+
+  private _resolveDigits(value?: number | string, fallback = 8): number {
+    const resolved = this._resolveNumber(value, fallback);
+    if (!Number.isFinite(resolved)) return fallback;
+    return Math.max(1, Math.min(32, Math.floor(resolved)));
+  }
+
+  private _resolveNumber(value?: number | string, fallback = 0): number {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const templated = this._evaluateTemplate(value);
+      if (typeof templated === 'number' && Number.isFinite(templated)) return templated;
+      if (typeof templated === 'string' && templated.trim() !== '') {
+        const parsed = Number(templated);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return fallback;
   }
 
 }

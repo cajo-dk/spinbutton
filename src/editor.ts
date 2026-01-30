@@ -26,10 +26,13 @@ interface SpinbuttonCardConfig extends LovelaceCardConfig {
   icon_color?: string | [number, number, number] | { r: number; g: number; b: number };
   name_color?: string | [number, number, number] | { r: number; g: number; b: number };
   state_color?: string | [number, number, number] | { r: number; g: number; b: number };
+  badge?: string;
   animation?: boolean;
   show_ring?: boolean;
   custom_css?: string;
   confirm_actions?: boolean;
+  keypad_actions?: boolean | string;
+  keypad_digits?: number | string;
   tap_action?: any;
   hold_action?: any;
   double_tap_action?: any;
@@ -167,6 +170,7 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
           { name: 'name', selector: { text: {} } },
           { name: 'entity', selector: { entity: {} } },
           { name: 'icon', selector: { icon: {} } },
+          { name: 'badge', selector: { text: {} } },
           {
             name: 'icon_size',
             selector: {
@@ -181,6 +185,18 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
           },
           { name: 'tap_action', selector: { ui_action: {} } },
           { name: 'confirm_actions', selector: { boolean: {} } },
+          { name: 'keypad_actions', selector: { boolean: {} } },
+          {
+            name: 'keypad_digits',
+            selector: {
+              number: {
+                min: 1,
+                max: 32,
+                step: 1,
+                mode: 'box',
+              },
+            },
+          },
           { name: 'double_tap_action', selector: { ui_action: {} } },
           { name: 'hold_action', selector: { ui_action: {} } },
         ],
@@ -349,12 +365,15 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
       icon_color: 'Icon Color',
       name_color: 'Name Color',
       state_color: 'State Color',
+      badge: 'Badge',
       animation: 'Animation',
       show_ring: 'Show Ring',
       tap_action: 'Tap Action',
       hold_action: 'Hold Action',
       double_tap_action: 'Double Tap Action',
       confirm_actions: 'Confirm Actions',
+      keypad_actions: 'Require Keypad Code',
+      keypad_digits: 'Required Digits',
     };
     return labels[schema.name] ?? schema.name;
   };

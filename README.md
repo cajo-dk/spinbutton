@@ -35,6 +35,7 @@ icon_size: 32
 icon_color: "#FFFFFF"
 name_color: "currentColor"
 state_color: "currentColor"
+badge: "ARMED"
 layout: icon_name_h
 radius: 8
 ring_width: 2
@@ -53,6 +54,8 @@ hold_action:
 double_tap_action:
   action: none
 confirm_actions: false
+keypad_actions: false
+keypad_digits: 8
 ```
 
 ### Options
@@ -65,6 +68,7 @@ confirm_actions: false
 - `icon_color`: Icon color as a CSS color string (hex, rgb/rgba, etc). Default: `#FFFFFF`.
 - `name_color`: Name color as a CSS color string (hex, rgb/rgba, etc). Default: `currentColor`.
 - `state_color`: State color as a CSS color string (hex, rgb/rgba, etc). Default: `currentColor`.
+- `badge`: Text shown in the upper-right corner (templateable). Default: not shown.
 - `layout`: Layout for icon/name/state. Options: `icon_name_h`, `icon_name_state`, `icon_name_v`, `custom_css`. Default: `icon_name_h`.
 - `radius`: Card corner radius in pixels. Default: `8`.
 - `ring_width`: Ring border width in pixels. Default: `2`.
@@ -80,6 +84,8 @@ confirm_actions: false
 - `hold_action`: Lovelace hold action.
 - `double_tap_action`: Lovelace double-tap action.
 - `confirm_actions`: Prompt before performing actions. Default: `false`.
+- `keypad_actions`: Require a numeric keypad code before performing actions. Default: `false`.
+- `keypad_digits`: Required number of digits for the keypad code. Default: `8`.
 
 ## Features
 
@@ -89,7 +95,18 @@ confirm_actions: false
 - Custom colors: `background`, `icon_color`, `name_color`, and `state_color` accept CSS strings or `{ r, g, b }` / `[r, g, b]`.
 - Optional animation and ring visibility toggles.
 - Action confirmation dialog styled to match the card.
+- Optional keypad dialog that sends the entered code with the action.
+
+### Script Example (Code Field)
+
+If you have a script that declares a `code` field, configure the card to call the script service and the keypad code will be injected into the service data as `code` (and as `variables.code` for `script.turn_on`).
+
+```
+tap_action:
+  action: call-service
+  service: script.toggle_home_alarm_with_code
+```
 
 ## Templating
 
-Some fields accept template strings in the form `[[[ ... ]]]` and are evaluated with `hass`, `states`, and `entity` in scope. This is supported for `background`, `icon_color`, `name_color`, `state_color`, `stops`, and boolean fields like `animation` and `show_ring`.
+Some fields accept template strings in the form `[[[ ... ]]]` and are evaluated with `hass`, `states`, and `entity` in scope. This is supported for `background`, `icon_color`, `name_color`, `state_color`, `stops`, `badge`, and boolean fields like `animation` and `show_ring`. `keypad_actions` and `keypad_digits` also support templates.

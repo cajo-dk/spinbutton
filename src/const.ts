@@ -41,6 +41,8 @@ export const DEFAULT_CONFIG = {
   show_ring: true,
   custom_css: '',
   confirm_actions: false,
+  keypad_actions: false,
+  keypad_digits: 4,
   tap_action: { action: 'none' },
   hold_action: { action: 'none' },
   double_tap_action: { action: 'none' },
