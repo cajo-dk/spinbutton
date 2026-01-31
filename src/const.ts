@@ -24,7 +24,7 @@ export const DEFAULT_CONFIG = {
   type: 'custom:spinbutton-card',
   name: 'ChangeMe',
   entity: '',
-  icon: 'mdi:rotate-right',
+  icon: '',
   icon_size: 32,
   layout: 'icon_name_h',
   radius: 8,

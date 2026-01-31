@@ -15,7 +15,7 @@ import type {
   LovelaceCardConfig,
   LovelaceCardEditor,
 } from 'custom-card-helpers';
-import { handleAction, handleActionConfig, hasAction, hasDoubleClick } from 'custom-card-helpers';
+import { handleAction, handleActionConfig, hasAction, hasDoubleClick, stateIcon } from 'custom-card-helpers';
 import { CARD_NAME, CARD_TYPE, CARD_VERSION } from './const';
 import { openConfirmDialog } from './confirm-dialog';
 import { openKeypadDialog } from './keypad-dialog';
@@ -106,7 +106,14 @@ export class SpinbuttonCard extends LitElement {
     const name = this._resolveText(this.config?.name, fallbackName);
     const custom_css = this.config?.custom_css ?? stateObj?.attributes?.custom_css ?? '';
     const layout = this.config?.layout ?? stateObj?.attributes?.layout ?? 'icon_name_h';
-    const icon = this.config?.icon ?? stateObj?.attributes?.icon ?? 'mdi:rotate-right';
+    const entityIcon = stateObj?.attributes?.icon;
+    const computedIcon = stateObj ? stateIcon(stateObj) : undefined;
+    const icon = this._resolveIcon(
+      this.config?.icon,
+      entityIcon,
+      computedIcon,
+      'mdi:rotate-right'
+    );
     const iconSize = this.config?.icon_size ?? 32;
     const iconColor = this._resolveColor(this.config?.icon_color, 'currentColor');
     const nameColor = this._resolveColor(this.config?.name_color, 'currentColor');
@@ -139,7 +146,7 @@ export class SpinbuttonCard extends LitElement {
             icon="${icon}"
           ></ha-icon>
           <div id="name" class="${layout} spinbutton" style="color: ${nameColor};">${name}</div>
-          <div id="state" class="${layout} spinbutton" style="color: ${stateColor};">${stateObj?.state}</div>
+          <div id="state" class="${layout} spinbutton" style="color: ${stateColor};">${this._formatState(stateObj?.state)}</div>
           ${badge
             ? html`<div id="badge" class="spinbutton" style="color: ${stateColor};">${badge}</div>`
             : ''}
@@ -258,6 +265,16 @@ export class SpinbuttonCard extends LitElement {
     return fallback;
   }
 
+  private _formatState(value?: string): string {
+    if (!value) return '';
+    if (!value.includes('_')) return value;
+    const [first, ...rest] = value.split('_');
+    const normalizedFirst = first
+      ? `${first[0].toUpperCase()}${first.slice(1)}`
+      : first;
+    return [normalizedFirst, ...rest].join(' ');
+  }
+
   private _resolveColor(
     value?: SpinbuttonCardConfig['background'],
     fallback = '#1C1F2B'
@@ -295,21 +312,76 @@ export class SpinbuttonCard extends LitElement {
     return fallback;
   }
 
+  private _resolveIcon(
+    value: unknown,
+    entityFallback: string | undefined,
+    computedFallback: string | undefined,
+    defaultFallback: string
+  ): string {
+    const fallback = entityFallback ?? computedFallback ?? defaultFallback;
+    if (value && typeof value === 'object') {
+      if ('value' in value) {
+        return this._resolveIcon(
+          (value as { value?: unknown }).value,
+          entityFallback,
+          computedFallback,
+          defaultFallback
+        );
+      }
+      if ('icon' in value) {
+        return this._resolveIcon(
+          (value as { icon?: unknown }).icon,
+          entityFallback,
+          computedFallback,
+          defaultFallback
+        );
+      }
+      if ('id' in value) {
+        return this._resolveIcon(
+          (value as { id?: unknown }).id,
+          entityFallback,
+          computedFallback,
+          defaultFallback
+        );
+      }
+    }
+    if (typeof value === 'string') {
+      if (this._isTemplate(value)) {
+        const templated = this._evaluateTemplate(value);
+        if (templated === undefined) return fallback;
+        const text = typeof templated === 'string' ? templated : String(templated);
+        return text.trim() !== '' ? text : fallback;
+      }
+      return value.trim() !== '' ? value : fallback;
+    }
+    return fallback;
+  }
+
   private _evaluateTemplate(value: string): unknown | undefined {
     const trimmed = value.trim();
     if (!trimmed.startsWith('[[[') || !trimmed.endsWith(']]]')) {
       return undefined;
     }
     const expression = trimmed.slice(3, -3);
+    const stateAttr = (entityId: string, attribute: string): unknown => {
+      if (!entityId || !attribute) return undefined;
+      return this.hass?.states?.[entityId]?.attributes?.[attribute];
+    };
     try {
       const fn = new Function(
         'hass',
         'states',
         'entity',
+        'state_attr',
         expression
-      ) as (hass: HomeAssistant, states: HomeAssistant['states'], entity?: string) => unknown;
+      ) as (
+        hass: HomeAssistant,
+        states: HomeAssistant['states'],
+        entity?: string,
+        state_attr?: (entityId: string, attribute: string) => unknown
+      ) => unknown;
       const entityId = this.config?.entity;
-      const result = fn(this.hass, this.hass?.states, entityId);
+      const result = fn(this.hass, this.hass?.states, entityId, stateAttr);
       if (result !== undefined) {
         return result;
       }
@@ -319,10 +391,16 @@ export class SpinbuttonCard extends LitElement {
         'hass',
         'states',
         'entity',
+        'state_attr',
         `return (${expression});`
-      ) as (hass: HomeAssistant, states: HomeAssistant['states'], entity?: string) => unknown;
+      ) as (
+        hass: HomeAssistant,
+        states: HomeAssistant['states'],
+        entity?: string,
+        state_attr?: (entityId: string, attribute: string) => unknown
+      ) => unknown;
       const entityId = this.config?.entity;
-      return fn(this.hass, this.hass?.states, entityId);
+      return fn(this.hass, this.hass?.states, entityId, stateAttr);
     } catch {
       return undefined;
     }
