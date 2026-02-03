@@ -267,7 +267,9 @@ export class SpinbuttonCard extends LitElement {
 
   private _formatState(value?: string): string {
     if (!value) return '';
-    if (!value.includes('_')) return value;
+    if (!value.includes('_')) {
+      return value.length > 0 ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
+    }
     const [first, ...rest] = value.split('_');
     const normalizedFirst = first
       ? `${first[0].toUpperCase()}${first.slice(1)}`
