@@ -234,20 +234,34 @@ export class SpinbuttonCard extends LitElement {
     }
   }
 
-  private _resolveBoolean(
-    value?: boolean | string,
-    fallback = false
-  ): boolean {
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') {
-      const templated = this._evaluateTemplate(value);
-      if (typeof templated === 'boolean') return templated;
-      const resolved = typeof templated === 'string' ? templated : value;
-      const normalized = resolved.trim().toLowerCase();
-      if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
-      if (['false', '0', 'no', 'off'].includes(normalized)) return false;
-    }
-    return fallback;
+  private _resolveBoolean(value?: unknown, fallback = false): boolean {
+    const parse = (candidate: unknown): boolean | undefined => {
+      if (typeof candidate === 'boolean') return candidate;
+      if (typeof candidate === 'string') {
+        const templated = this._evaluateTemplate(candidate);
+        if (typeof templated === 'boolean') return templated;
+        const resolved = typeof templated === 'string' ? templated : candidate;
+        const normalized = resolved.trim().toLowerCase();
+        if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+        if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+        return undefined;
+      }
+      if (candidate && typeof candidate === 'object') {
+        const shaped = candidate as { value?: unknown; id?: unknown };
+        if (shaped.value !== undefined) {
+          const parsedValue = parse(shaped.value);
+          if (parsedValue !== undefined) return parsedValue;
+        }
+        if (shaped.id !== undefined) {
+          const parsedId = parse(shaped.id);
+          if (parsedId !== undefined) return parsedId;
+        }
+      }
+      return undefined;
+    };
+
+    const resolved = parse(value);
+    return resolved ?? fallback;
   }
 
   private _resolveLength(value?: number | string, fallback = '0px'): string {
@@ -556,6 +570,20 @@ export class SpinbuttonCard extends LitElement {
     actionConfig: ActionConfig,
     code: string
   ): ActionConfig & { code?: string; data?: Record<string, unknown>; service_data?: Record<string, unknown> } {
+    const raw = actionConfig as ActionConfig & {
+      service?: string;
+      data?: Record<string, unknown>;
+      service_data?: Record<string, unknown>;
+    };
+    const serviceData: Record<string, unknown> = {
+      ...(raw.data ?? {}),
+      ...(raw.service_data ?? {}),
+      code,
+    };
+    if (raw.service === 'script.turn_on') {
+      const variables = (serviceData.variables ?? {}) as Record<string, unknown>;
+      serviceData.variables = { ...variables, code };
+    }
     const enriched: ActionConfig & {
       code?: string;
       data?: Record<string, unknown>;
@@ -563,30 +591,13 @@ export class SpinbuttonCard extends LitElement {
     } = {
       ...actionConfig,
       code,
-    };
-    if (actionConfig.action === 'call-service') {
-      const raw = actionConfig as ActionConfig & { data?: Record<string, unknown> };
-      const serviceData: Record<string, unknown> = {
-        ...(raw.data ?? {}),
-        ...(actionConfig.service_data ?? {}),
-      };
-      serviceData.code = code;
-      if (actionConfig.service === 'script.turn_on') {
-        const variables = (serviceData.variables ?? {}) as Record<string, unknown>;
-        serviceData.variables = { ...variables, code };
-      }
-      return {
-        ...enriched,
-        service_data: serviceData,
-      };
-    }
-    return {
-      ...enriched,
       data: {
-        ...((actionConfig as ActionConfig & { data?: Record<string, unknown> }).data ?? {}),
+        ...(raw.data ?? {}),
         code,
       },
+      service_data: serviceData,
     };
+    return enriched;
   }
 
   private _normalizeActionConfig(actionConfig: ActionConfig): ActionConfig {
