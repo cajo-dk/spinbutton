@@ -38,6 +38,7 @@ interface SpinbuttonCardConfig extends LovelaceCardConfig {
   name_color?: string | [number, number, number] | { r: number; g: number; b: number };
   state_color?: string | [number, number, number] | { r: number; g: number; b: number };
   badge?: string;
+  button_id?: string;
   animation?: boolean;
   show_ring?: boolean;
   tap_action?: ActionConfig;
@@ -66,6 +67,8 @@ console.info(
 @customElement(CARD_TYPE)
 export class SpinbuttonCard extends LitElement {
   private _hass?: HomeAssistant;
+  private _configuredButtonId?: string;
+  private _externalTriggerButton?: HTMLButtonElement;
 
   private _tapTimeout?: number;
   private _holdTimeout?: number;
@@ -165,6 +168,11 @@ export class SpinbuttonCard extends LitElement {
     return 1;
   }
 
+  public override click(): void {
+    super.click();
+    void this._confirmAndHandle('tap');
+  }
+
   protected shouldUpdate(changedProps: PropertyValues<this>): boolean {
 
     if (changedProps.has('config' as keyof SpinbuttonCard)) {
@@ -200,6 +208,19 @@ export class SpinbuttonCard extends LitElement {
     const showRing = this._resolveBoolean(this.config.show_ring, true);
     const stops = this._resolveStops(this.config.stops);
     const iconSize = this.config.icon_size ?? 32;
+    const configuredButtonId = this._resolveText(this.config?.button_id, '').trim();
+    if (configuredButtonId !== this._configuredButtonId) {
+      if (this._configuredButtonId && this.id === this._configuredButtonId) {
+        this.removeAttribute('id');
+      }
+      if (configuredButtonId) {
+        this.id = configuredButtonId;
+      }
+    }
+    if (configuredButtonId !== this._configuredButtonId) {
+      this._syncExternalTrigger(configuredButtonId);
+      this._configuredButtonId = configuredButtonId || undefined;
+    }
     this.style.setProperty('--radius', `${radius}px`);
     this.style.setProperty('--ring-width', `${ringWidth}px`);
     this.style.setProperty('--card-width', cardWidth);
@@ -210,6 +231,47 @@ export class SpinbuttonCard extends LitElement {
     this.style.setProperty('--ring-active', showRing ? '1' : '0');
     this.style.setProperty('--stops', stops);
     this.style.setProperty('--mdc-icon-size', `${iconSize}px`);
+  }
+
+  public disconnectedCallback(): void {
+    this._removeExternalTrigger();
+    super.disconnectedCallback();
+  }
+
+  private _triggerElementId(buttonId: string): string {
+    return `spinbutton-trigger-${buttonId}`;
+  }
+
+  private _syncExternalTrigger(buttonId: string): void {
+    this._removeExternalTrigger();
+    if (!buttonId) return;
+
+    const triggerId = this._triggerElementId(buttonId);
+    const existing = document.getElementById(triggerId);
+    if (existing && existing instanceof HTMLButtonElement) {
+      existing.remove();
+    } else if (existing) {
+      return;
+    }
+
+    const trigger = document.createElement('button');
+    trigger.id = triggerId;
+    trigger.type = 'button';
+    trigger.hidden = true;
+    trigger.tabIndex = -1;
+    trigger.setAttribute('aria-hidden', 'true');
+    trigger.setAttribute('data-spinbutton-trigger-for', buttonId);
+    trigger.addEventListener('click', () => {
+      void this._confirmAndHandle('tap');
+    });
+    document.body.appendChild(trigger);
+    this._externalTriggerButton = trigger;
+  }
+
+  private _removeExternalTrigger(): void {
+    if (!this._externalTriggerButton) return;
+    this._externalTriggerButton.remove();
+    this._externalTriggerButton = undefined;
   }
 
   private _resolveStops(stops?: SpinbuttonCardConfig['stops']): string {

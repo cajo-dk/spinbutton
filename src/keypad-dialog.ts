@@ -5,6 +5,8 @@ interface KeypadDialogOptions {
 
 const STYLE_ID = 'spinbutton-keypad-styles';
 
+const isLaptopOrTablet = (): boolean => window.matchMedia('(min-width: 768px)').matches;
+
 const ensureKeypadStyles = (): void => {
   if (document.getElementById(STYLE_ID)) {
     return;
@@ -24,38 +26,38 @@ const ensureKeypadStyles = (): void => {
     .spinbutton-keypad-dialog {
       background: var(--spinbutton-keypad-bg);
       border: 1px solid var(--spinbutton-keypad-border);
-      border-radius: calc(var(--spinbutton-keypad-radius) + 2px);
-      padding: 16px;
-      min-width: 240px;
-      max-width: min(92vw, 360px);
+      border-radius: calc(var(--spinbutton-keypad-radius) + calc(2px * var(--spinbutton-keypad-scale, 1)));
+      padding: calc(16px * var(--spinbutton-keypad-scale, 1));
+      min-width: calc(240px * var(--spinbutton-keypad-scale, 1));
+      max-width: min(92vw, calc(360px * var(--spinbutton-keypad-scale, 1)));
       color: var(--spinbutton-keypad-text);
     }
     .spinbutton-keypad-title {
-      font-size: 14px;
-      margin-bottom: 8px;
+      font-size: calc(14px * var(--spinbutton-keypad-scale, 1));
+      margin-bottom: calc(8px * var(--spinbutton-keypad-scale, 1));
     }
     .spinbutton-keypad-display {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
         "Courier New", monospace;
-      font-size: 18px;
-      letter-spacing: 4px;
+      font-size: calc(18px * var(--spinbutton-keypad-scale, 1));
+      letter-spacing: calc(4px * var(--spinbutton-keypad-scale, 1));
       text-align: center;
-      padding: 8px 0 12px;
+      padding: calc(8px * var(--spinbutton-keypad-scale, 1)) 0 calc(12px * var(--spinbutton-keypad-scale, 1));
     }
     .spinbutton-keypad-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: calc(8px * var(--spinbutton-keypad-scale, 1));
     }
     .spinbutton-keypad-button {
       appearance: none;
       border: 1px solid var(--spinbutton-keypad-border);
       background: var(--spinbutton-keypad-bg);
       color: inherit;
-      padding: 10px 0;
-      border-radius: 8px;
+      padding: calc(10px * var(--spinbutton-keypad-scale, 1)) 0;
+      border-radius: calc(8px * var(--spinbutton-keypad-scale, 1));
       cursor: pointer;
-      font-size: 14px;
+      font-size: calc(14px * var(--spinbutton-keypad-scale, 1));
     }
     .spinbutton-keypad-button.primary {
       background: var(--spinbutton-keypad-border);
@@ -68,7 +70,7 @@ const ensureKeypadStyles = (): void => {
     .spinbutton-keypad-actions {
       display: grid;
       grid-template-columns: 1fr;
-      margin-top: 8px;
+      margin-top: calc(8px * var(--spinbutton-keypad-scale, 1));
     }
   `;
   document.head.appendChild(style);
@@ -132,10 +134,12 @@ export const openKeypadDialog = (
   const border = computed.getPropertyValue('--solid-color').trim() || '#008080';
   const radius = computed.getPropertyValue('--radius').trim() || '8px';
   const text = computed.getPropertyValue('--primary-text-color').trim() || '#ffffff';
+  const scale = isLaptopOrTablet() ? 3 : 1;
   overlay.style.setProperty('--spinbutton-keypad-bg', bg);
   overlay.style.setProperty('--spinbutton-keypad-border', border);
   overlay.style.setProperty('--spinbutton-keypad-radius', radius);
   overlay.style.setProperty('--spinbutton-keypad-text', text);
+  overlay.style.setProperty('--spinbutton-keypad-scale', String(scale));
 
   let value = '';
   const renderDisplay = (): void => {

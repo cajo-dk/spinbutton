@@ -30,6 +30,7 @@ interface SpinbuttonCardConfig extends LovelaceCardConfig {
   animation?: boolean;
   show_ring?: boolean;
   custom_css?: string;
+  button_id?: string;
   confirm_actions?: boolean;
   keypad_actions?: boolean | string;
   keypad_digits?: number | string;
@@ -171,6 +172,7 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
           { name: 'entity', selector: { entity: {} } },
           { name: 'icon', selector: { icon: {} } },
           { name: 'badge', selector: { text: {} } },
+          { name: 'button_id', selector: { text: {} } },
           {
             name: 'icon_size',
             selector: {
@@ -366,6 +368,7 @@ export class SpinbuttonEditor extends LitElement implements LovelaceCardEditor {
       name_color: 'Name Color',
       state_color: 'State Color',
       badge: 'Badge',
+      button_id: 'Button ID',
       animation: 'Animation',
       show_ring: 'Show Ring',
       tap_action: 'Tap Action',

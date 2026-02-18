@@ -40,6 +40,7 @@ export const DEFAULT_CONFIG = {
   animation: true,
   show_ring: true,
   custom_css: '',
+  button_id: '',
   confirm_actions: false,
   keypad_actions: false,
   keypad_digits: 4,
